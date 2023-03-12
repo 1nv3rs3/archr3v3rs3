@@ -38,7 +38,7 @@ echo -ne "
 --------------------------------------------------------
 "
 umount -A --recursive /mnt # Unmount everything before we start
-lsblks
+lsblk
 echo -n "Please select the disk you want to use: [ex: /dev/sda]: "
 DISK= read -r
 sgdisk -Z ${DISK} # Zap all on disk
