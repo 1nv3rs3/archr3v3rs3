@@ -18,7 +18,7 @@ echo -ne "
 --------------------------------------------------------
 "
 loadkeys pt-latin1
-iso=$(curl -4 ifconfig.co/country-iso
+iso=$(curl -4 ifconfig.co/country-iso)ss
 timedatectl set-ntp true
 pacman -S --noconfirm archlinux-keyring # Update keyrings to latest to prevent packages failing to install
 pacman -S --noconfirm --needed pacman-contrib terminus-font
@@ -38,7 +38,7 @@ echo -ne "
 --------------------------------------------------------
 "
 umount -A --recursive /mnt # Unmount everything before we start
-lsblk
+lsblks
 echo -n "Please select the disk you want to use: [ex: /dev/sda]: "
 DISK= read -r
 sgdisk -Z ${DISK} # Zap all on disk
