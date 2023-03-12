@@ -100,7 +100,7 @@ fi
 
 mkfs.vfat -F32 -n "EFIBOOT" "${partition2}"
 # Enter luks password to cryptsetup and format root partition
-echo -n "${LUKS_PASSWORD}" | cryptsetup -y -v luksFormat "${partition3}" -
+echo -n "${LUKS_PASSWORD}" | cryptsetup -y -f -v luksFormat "${partition3}" -
 # Open luks container and ROOT will be place holder 
 echo -n "${LUKS_PASSWORD}" | cryptsetup open "${partition3}" ROOT -
 # Now format that container
