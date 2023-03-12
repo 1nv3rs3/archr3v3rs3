@@ -59,6 +59,37 @@ echo -ne "
                   Creating Filesystems...
 --------------------------------------------------------
 "
+# Creates the btrfs subvolumes
+createsubvolumes () {
+    btrfs subvolume create /mnt/@
+    btrfs subvolume create /mnt/@home
+    btrfs subvolume create /mnt/@var
+    btrfs subvolume create /mnt/@tmp
+    btrfs subvolume create /mnt/@.snapshots
+}
+
+# Mount all btrfs subvolumes after root has been mounted
+mountallsubvol () {
+    mount -o "${MOUNT_OPTIONS}",subvol=@home "${partition3}" /mnt/home
+    mount -o "${MOUNT_OPTIONS}",subvol=@tmp "${partition3}" /mnt/tmp
+    mount -o "${MOUNT_OPTIONS}",subvol=@var "${partition3}" /mnt/var
+    mount -o "${MOUNT_OPTIONS}",subvol=@.snapshots "${partition3}" /mnt/.snapshots
+}
+
+# TRFS subvolulme creation and mounting. 
+subvolumesetup () {
+# create nonroot subvolumes
+    createsubvolumes     
+# unmount root to remount with subvolume 
+    umount /mnt
+# mount @ subvolume
+    mount -o "${MOUNT_OPTIONS}",subvol=@ "${partition3}" /mnt
+# make directories home, .snapshots, var, tmp
+    mkdir -p /mnt/{home,var,tmp,.snapshots}
+# mount subvolumes
+    mountallsubvol
+}
+
 if [[ "${DISK}" =~ "nvme" ]]; then
     partition2=${DISK}p2
     partition3=${DISK}p3
