@@ -59,37 +59,6 @@ echo -ne "
                   Creating Filesystems...
 --------------------------------------------------------
 "
-# Creates the btrfs subvolumes
-createsubvolumes () {
-    btrfs subvolume create /mnt/@
-    btrfs subvolume create /mnt/@home
-    btrfs subvolume create /mnt/@var
-    btrfs subvolume create /mnt/@tmp
-    btrfs subvolume create /mnt/@.snapshots
-}
-
-# Mount all btrfs subvolumes after root has been mounted
-mountallsubvol () {
-    mount -o "${MOUNT_OPTIONS}",subvol=@home "${partition3}" /mnt/home
-    mount -o "${MOUNT_OPTIONS}",subvol=@tmp "${partition3}" /mnt/tmp
-    mount -o "${MOUNT_OPTIONS}",subvol=@var "${partition3}" /mnt/var
-    mount -o "${MOUNT_OPTIONS}",subvol=@.snapshots "${partition3}" /mnt/.snapshots
-}
-
-# TRFS subvolulme creation and mounting. 
-subvolumesetup () {
-# create nonroot subvolumes
-    createsubvolumes     
-# unmount root to remount with subvolume 
-    umount /mnt
-# mount @ subvolume
-    mount -o "${MOUNT_OPTIONS}",subvol=@ "${partition3}" /mnt
-# make directories home, .snapshots, var, tmp
-    mkdir -p /mnt/{home,var,tmp,.snapshots}
-# mount subvolumes
-    mountallsubvol
-}
-
 if [[ "${DISK}" =~ "nvme" ]]; then
     partition2=${DISK}p2
     partition3=${DISK}p3
@@ -98,19 +67,19 @@ else
     partition3=${DISK}3
 fi
 
-mkfs.vfat -F32 -n "EFIBOOT" "${partition2}"
-# Enter luks password to cryptsetup and format root partition
-echo -n "${LUKS_PASSWORD}" | cryptsetup -y -f -v luksFormat "${partition3}" -
-# Open luks container and ROOT will be place holder 
-echo -n "${LUKS_PASSWORD}" | cryptsetup open "${partition3}" ROOT -
-# Now format that container
-mkfs.btrfs -L ROOT "${partition3}"
-# Create subvolumes for btrfs
-mount -t btrfs "${partition3}" /mnt
-subvolumesetup
-# Store uuid of encrypted partition for grub
-echo ENCRYPTED_PARTITION_UUID="$(blkid -s UUID -o value "${partition3}")" >> "$CONFIGS_DIR"/setup.conf
+# Encrypt partition
+cryptsetup luksFormat --verify-passphrase --verbose "${partition3}" # Assign passphrase
+cryptsetup luksOpen "${partition3}" inv3rs3 # Open encrypted partition for using
+ls -l /dev/mapper/inv3rs3 # Make sure that partition exists
 
-# Mount target
-mkdir -p /mnt/boot/efi
-mount -t vfat -L EFIBOOT /mnt/boot/
+# Create LVM partition
+pvcreate /dev/mapper/inv3rs3 # Create a Physical Volume for LVM
+vgcreate inv3rs3 /dev/mapper/inv3rs3 # Create a Volume Group
+lvcreate -L2G inv3rs3 -n swap # Create a Logical Volume for swap
+lvcreate -l 100%FREE inv3rs3 -n root # Create a Logical Volume for root partition
+
+# Formating partitions
+mkfs.ext4 /dev/mapper/inv3rs3-root
+mkfs.ext4 /dev/sda1
+mkswap /dev/mapper/inv3rs3-swap
+swapon /dev/mapper/inv3rs3-swap
