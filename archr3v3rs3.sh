@@ -41,6 +41,7 @@ umount -A --recursive /mnt # Unmount everything before we start
 lsblk
 echo -n "Please select the disk you want to use: [ex: /dev/sda]: "
 DISK=$(read -r)
+echo $DISK
 sgdisk -Z ${DISK} # Zap all on disk
 sgdisk -a 2048 -o ${DISK} # New gpt disk 2048 alignment
 
